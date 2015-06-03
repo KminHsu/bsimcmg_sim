@@ -1,0 +1,6 @@
+#!/bin/tcsh -f
+
+setenv LD_LIBRARY_PATH 
+setenv LD_LIBRARY_PATH /usr/local/lib:$LD_LIBRARY_PATH
+
+./test
