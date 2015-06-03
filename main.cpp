@@ -21,6 +21,11 @@
 #include <N_LAS_Matrix.h>
 #include <N_LAS_Vector.h>
 
+#include <N_LAS_MultiVector.h>
+#include <N_LAS_System.h>
+#include <N_LAS_LAFactory.h>
+
+#include "Epetra_SerialDenseMatrix.h"
 using namespace std;
 
 void SetupModelParamsForNMOS(N_DEV_DeviceMgr* pDevMgr)
@@ -39,8 +44,18 @@ void SetupModelParamsForPMOS(N_DEV_DeviceMgr* pDevMgr)
   pDevMgr->addDeviceModel(MB);
 }
 
+void GetJacobianMatrix(Xyce::Device::ADMSbsimcmg::Instance* pInst, double Vd, double Vg, double Vs, double Ve)
+{
+  double Vdi = 0.0;
+  double Vsi = 0.0;
+  int nNumNode = pInst->numIntVars + pInst->numExtVars;
+  Epetra_SerialDenseMatrix Q(nNumNode, nNumNode);
+  Epetra_SerialDenseMatrix M(nNumNode, nNumNode);
+  pInst->updateIntermediateVarsMy(Vd, Vg, Vs, Ve, Vdi, Vsi);
+  //pInst->loadDAEdFdx();
+}
+
 int main(int nArgc, char** pArgv) {  
-  cout << "Hello !!\n";
 
   //Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>& rConfig = Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>::addConfiguration()
   //  .registerDevice("m", 107)
@@ -52,8 +67,6 @@ int main(int nArgc, char** pArgv) {
   N_DEV_InstanceBlock IB2;
   Xyce::IO::CmdParse cp; 
   N_DEV_DeviceMgr* pDevMgr = N_DEV_DeviceMgr::factory(cp);  // Allocate device manager:
-
-  //pDevMgr->initializeAll();
 
   SetupModelParamsForPMOS(pDevMgr);
   SetupModelParamsForNMOS(pDevMgr);
@@ -70,11 +83,8 @@ int main(int nArgc, char** pArgv) {
   double Vg = 1.0;
   double Vs = 0.0;
   double Ve = 0.0;
-  double Vdi = 0.0;
-  double Vsi = 0.0;
  
-  pInst->updateIntermediateVarsMy(Vd, Vg, Vs, Ve, Vdi, Vsi);
-
+  GetJacobianMatrix(pInst, Vd, Vg, Vs, Ve);
 
   return 0;
 }
