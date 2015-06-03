@@ -58,22 +58,6 @@ int main(int nArgc, char** pArgv) {
   SetupModelParamsForPMOS(pDevMgr);
   SetupModelParamsForNMOS(pDevMgr);
 
-  // cout << __LINE__ << "\n";
-
-  // N_DEV_ModelBlock MB("nmos1", "nmos", 107);
-  // MB.params.push_back(Xyce::Device::Param("L", 16e-9));
-  // MB.params.push_back(Xyce::Device::Param("BULKMOD", 1));
-  // pDevMgr->addDeviceModel(MB);
-
-  // cout << __LINE__ << "\n";
-
-  // N_DEV_ModelBlock MB1("pmos1", "pmos", 107);
-  // MB1.params.push_back(Xyce::Device::Param("L", 16e-9));
-  // MB1.params.push_back(Xyce::Device::Param("BULKMOD", 1));
-  // pDevMgr->addDeviceModel(MB1);
-  // 
-  // cout << __LINE__ << "\n";
-
   Xyce::Device::InstanceName instance("M1");
   IB2.setInstanceName(instance);
   IB2.setModelName("nmos1");
