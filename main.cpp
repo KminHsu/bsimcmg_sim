@@ -137,9 +137,9 @@ void IncludeModelCard(N_DEV_DeviceMgr* pDevMgr, char * pFileName)
         cout << rxKeyValue.cap(1).toLocal8Bit().data() << " = "
              << rxKeyValue.cap(2).toLocal8Bit().data() << endl;
         key = rxKeyValue.cap(1).trimmed();
-        value = rxKeyValue.cap(2).trimmed().toDouble();
-        Xyce::Device::Param TP(key.toLocal8Bit().data(), value);
-        //Xyce::Device::Param TP(key.toLocal8Bit().data(), (const char*)rxKeyValue.cap(2).trimmed().toLocal8Bit().data(), true);
+        //value = rxKeyValue.cap(2).trimmed().toDouble();
+        //Xyce::Device::Param TP(key.toLocal8Bit().data(), value);
+        Xyce::Device::Param TP(key.toLocal8Bit().data(), (const char*)rxKeyValue.cap(2).trimmed().toLocal8Bit().data(), true);
  
         pMB->params.push_back(TP);
       }
@@ -330,28 +330,32 @@ void GetJacobianMatrix(Xyce::Device::ADMSbsimcmg::Instance* pInst, double Vd, do
 
 }
 
-int main(int nArgc, char** pArgv) {  
-
+void BSIMCMG(double Vd, double Vg, double Vs, double Ve)
+{
   //Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>& rConfig = Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>::addConfiguration()
   //  .registerDevice("m", 107)
   //  .registerModelType("nmos", 107)
   //  .registerModelType("pmos", 107);
 
   Xyce::Device::registerDevices();
+  cout << "Line:" << __LINE__ << "\n";
  
   N_DEV_InstanceBlock IB2;
   Xyce::IO::CmdParse cp; 
   N_DEV_DeviceMgr* pDevMgr = N_DEV_DeviceMgr::factory(cp);  // Allocate device manager:
+  pDevMgr->updateTemperature(25.0);
+  cout << "Line:" << __LINE__ << "\n";
 
   IncludeModelCard(pDevMgr, "modelcard.nmos_xyce");
   //IncludeModelCard(pDevMgr, "modelcard.pmos_xyce");
   //SetupModelParamsForPMOS(pDevMgr);
   //SetupModelParamsForNMOS(pDevMgr);
+  cout << "Line:" << __LINE__ << "\n";
 
   Xyce::Device::InstanceName instance("M1");
   IB2.setInstanceName(instance);
   IB2.setModelName("nmos1");
-  cout << __LINE__ << "\n";
+  cout << "Line:" << __LINE__ << "\n";
 
   IB2.params.push_back( Xyce::Device::Param("L"   , 3e-8, true) );
   IB2.params.push_back( Xyce::Device::Param("TFIN", 1.5e-8, true) );
@@ -359,53 +363,65 @@ int main(int nArgc, char** pArgv) {
   IB2.params.push_back( Xyce::Device::Param("NRS" , 1.0, true) );
   IB2.params.push_back( Xyce::Device::Param("NRD" , 1.0, true) );
   
-  Xyce::Device::ParametricData<void>& inst_parameters = pGlobalConfig->getInstanceParameters();
-  const Xyce::Device::ParameterMap& parameter_map = inst_parameters.getMap();
-  for (ParameterMap::const_iterator it = parameter_map.begin(); it != parameter_map.end(); ++it) {
-    cout << "inst " << (*it).first << " = "; 
-    string key = (*it).first;
-
-    const Descriptor &descriptor = *(*it).second;
-    if( descriptor.isType<int>() )
-    {
-       //cout << "Integer type : " << endl;
-       int value = (int)Xyce::Device::getDefaultValue<int>(descriptor);
-       cout << value << endl;
-       if( IB2.params.end() != find( IB2.params.begin(), IB2.params.end(), Xyce::Device::Param(key, value) ) )
-       {
-         cout << "skip int !!" << endl;
-         continue;
-       }
-       IB2.params.push_back(Xyce::Device::Param(key, value));
-    }
-    else if( descriptor.isType<double>() )
-    {
-       //cout << "Double type : " << endl;
-       double value = (double)Xyce::Device::getDefaultValue<double>(descriptor);
-       cout << value << endl;
-       if( IB2.params.end() != find( IB2.params.begin(), IB2.params.end(), Xyce::Device::Param(key, value) ) )
-       {
-         cout << "skip double !!" << endl;
-         continue;
-       }
-       IB2.params.push_back(Xyce::Device::Param(key, value));
-    }
-    else
-    {
-      cout << "Unknow Type !!" << endl;
-    }
-  }
+  cout << "Line:" << __LINE__ << "\n";
+  
+  //Xyce::Device::ParametricData<void>& inst_parameters = pGlobalConfig->getInstanceParameters();
+  //const Xyce::Device::ParameterMap& parameter_map = inst_parameters.getMap();
+  //for (ParameterMap::const_iterator it = parameter_map.begin(); it != parameter_map.end(); ++it) {
+  //  cout << "inst " << (*it).first << " = "; 
+  //  string key = (*it).first;
+  //  const Descriptor &descriptor = *(*it).second;
+  //  if( descriptor.isType<int>() )
+  //  {
+  //     //cout << "Integer type : " << endl;
+  //     int value = (int)Xyce::Device::getDefaultValue<int>(descriptor);
+  //     cout << value << endl;
+  //     if( IB2.params.end() != find( IB2.params.begin(), IB2.params.end(), Xyce::Device::Param(key, value) ) )
+  //     {
+  //       cout << "skip int !!" << endl;
+  //       continue;
+  //     }
+  //     IB2.params.push_back(Xyce::Device::Param(key, value));
+  //  }
+  //  else if( descriptor.isType<double>() )
+  //  {
+  //     //cout << "Double type : " << endl;
+  //     double value = (double)Xyce::Device::getDefaultValue<double>(descriptor);
+  //     cout << value << endl;
+  //     if( IB2.params.end() != find( IB2.params.begin(), IB2.params.end(), Xyce::Device::Param(key, value) ) )
+  //     {
+  //       cout << "skip double !!" << endl;
+  //       continue;
+  //     }
+  //     IB2.params.push_back(Xyce::Device::Param(key, value));
+  //  }
+  //  else
+  //  {
+  //    cout << "Unknow Type !!" << endl;
+  //  }
+  //}
 
   Xyce::Device::ADMSbsimcmg::Instance* pInst = (Xyce::Device::ADMSbsimcmg::Instance*) pDevMgr->addDeviceInstance(IB2);
+  cout << "Line:" << __LINE__ << "\n";
   pInst->processParams();
-  pDevMgr->updateTemperature(25.0);
+  cout << "Line:" << __LINE__ << "\n";
+  pInst->getModel().processParams();
+  cout << "Line:" << __LINE__ << "\n";
   
+
+  cout << "Line:" << __LINE__ << "\n";
+  GetJacobianMatrix(pInst, Vd, Vg, Vs, Ve);
+
+}
+
+int main(int nArgc, char** pArgv) {  
+
   double Vd = 0.2999999999999999889;
   double Vg = 1.0;
   double Vs = 0.0;
   double Ve = 0.0;
- 
-  GetJacobianMatrix(pInst, Vd, Vg, Vs, Ve);
 
+  BSIMCMG(Vd, Vg, Vs, Ve);
+ 
   return 0;
 }
