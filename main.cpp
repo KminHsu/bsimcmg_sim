@@ -29,7 +29,9 @@
 
 #include <QFile>
 #include <QString>
+#include <QStringList>
 #include <QRegExp>
+#include <QMap>
 
 #include "Epetra_SerialDenseMatrix.h"
 using namespace std;
@@ -330,6 +332,22 @@ void GetJacobianMatrix(Xyce::Device::ADMSbsimcmg::Instance* pInst, double Vd, do
 
 }
 
+Xyce::Device::ADMSbsimcmg::Instance* CreateInstance(char* psInstName, char* psModelName, char* psInstParams)
+{
+  QString qsInstParams(psInstParams);
+  QStringList paramList = qsInstParams.split(" ");
+
+  cout << psInstName << " " << psModelName << endl;
+  QStringList keyValue;
+  for(int i = 0; i < paramList.size(); i++)
+  {
+    if( paramList.at(i).trimmed() == "" )
+     continue;
+    keyValue = paramList.at(i).trimmed().split("=");
+    cout << keyValue.at(0).toLocal8Bit().data() << " = " << keyValue.at(1).toLocal8Bit().data() << endl;
+  }
+}
+
 void BSIMCMG(double Vd, double Vg, double Vs, double Ve)
 {
   //Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>& rConfig = Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>::addConfiguration()
@@ -340,9 +358,8 @@ void BSIMCMG(double Vd, double Vg, double Vs, double Ve)
   Xyce::Device::registerDevices();
   cout << "Line:" << __LINE__ << "\n";
  
-  N_DEV_InstanceBlock IB2;
   Xyce::IO::CmdParse cp; 
-  N_DEV_DeviceMgr* pDevMgr = N_DEV_DeviceMgr::factory(cp);  // Allocate device manager:
+  static N_DEV_DeviceMgr* pDevMgr = N_DEV_DeviceMgr::factory(cp);  // Allocate device manager:
   pDevMgr->updateTemperature(25.0);
   cout << "Line:" << __LINE__ << "\n";
 
@@ -352,6 +369,7 @@ void BSIMCMG(double Vd, double Vg, double Vs, double Ve)
   //SetupModelParamsForNMOS(pDevMgr);
   cout << "Line:" << __LINE__ << "\n";
 
+  N_DEV_InstanceBlock IB2;
   Xyce::Device::InstanceName instance("M1");
   IB2.setInstanceName(instance);
   IB2.setModelName("nmos1");
@@ -362,6 +380,8 @@ void BSIMCMG(double Vd, double Vg, double Vs, double Ve)
   IB2.params.push_back( Xyce::Device::Param("NFIN", 10.0, true) );
   IB2.params.push_back( Xyce::Device::Param("NRS" , 1.0, true) );
   IB2.params.push_back( Xyce::Device::Param("NRD" , 1.0, true) );
+
+  CreateInstance("M1", "nmos1", "L=3e-8 TFIN=1.5e-8 NFIN=10.0 NRS=1.0 NRD=1.0");
   
   cout << "Line:" << __LINE__ << "\n";
   

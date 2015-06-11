@@ -1,0 +1,5 @@
+
+setenv PATH /usr/lib64/qt4/bin:$PATH
+setenv PATH /usr/local/MATLAB/R2013a/bin:$PATH
+setenv LD_LIBRARY_PATH /usr/lib64/qt4/lib64:$LD_LIBRARY_PATH
+setenv LD_LIBRARY_PATH /usr/local/lib:$LD_LIBRARY_PATH

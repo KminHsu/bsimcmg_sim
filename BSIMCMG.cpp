@@ -5,69 +5,9 @@
 
 using namespace std;
 
-void BSIMCMG(double Vd, double Vg, double Vs, double Ve);
+void BSIMCMG(char* psInstName, double Vd, double Vg, double Vs, double Ve);
 
-extern void _main();
-
-/****************************/
-class MyData {
-
-public:
-  void display();
-  void set_data(double v1, double v2);
-  MyData(double v1 = 0, double v2 = 0);
-  ~MyData() { }
-private:
-  double val1, val2;
-};
-
-MyData::MyData(double v1, double v2)
-{
-  val1 = v1;
-  val2 = v2;
-}
-
-void MyData::display()
-{
-#ifdef _WIN32
-	mexPrintf("Value1 = %g\n", val1);
-	mexPrintf("Value2 = %g\n\n", val2);
-#else
-  cout << "Value1 = " << val1 << "\n";
-  cout << "Value2 = " << val2 << "\n\n";
-#endif
-}
-
-void MyData::set_data(double v1, double v2) { val1 = v1; val2 = v2; }
-
-/*********************/
-
-static
-void mexcpp(
-	    double num1,
-	    double num2
-	    )
-{
-#ifdef _WIN32
-	mexPrintf("\nThe initialized data in object:\n");
-#else
-  cout << "\nThe initialized data in object:\n";
-#endif
-  MyData *d = new MyData; // Create a  MyData object
-  d->display();           // It should be initialized to
-                          // zeros
-  d->set_data(num1,num2); // Set data members to incoming
-                          // values
-#ifdef _WIN32
-  mexPrintf("After setting the object's data to your input:\n");
-#else
-  cout << "After setting the object's data to your input:\n";
-#endif
-  d->display();           // Make sure the set_data() worked
-  delete(d);
-  flush(cout);
-  return;
-}
+typedef void (*BSIMCMGIF)(char*, double, double, double, double); 
 
 void mexFunction(
 		 int          nlhs,
@@ -80,23 +20,42 @@ void mexFunction(
 
   /* Check for proper number of arguments */
 
-  if (nrhs != 2) {
-    mexErrMsgIdAndTxt("MATLAB:mexcpp:nargin", 
-            "MEXCPP requires two input arguments.");
-  } else if (nlhs >= 1) {
-    mexErrMsgIdAndTxt("MATLAB:mexcpp:nargout",
-            "MEXCPP requires no output argument.");
-  }
+  //if (nrhs != 2) {
+  //  mexErrMsgIdAndTxt("MATLAB:mexcpp:nargin", 
+  //          "MEXCPP requires two input arguments.");
+  //} else if (nlhs >= 1) {
+  //  mexErrMsgIdAndTxt("MATLAB:mexcpp:nargout",
+  //          "MEXCPP requires no output argument.");
+  //}
  
-  void* lib_handle = dlopen("/mnt/hgfs/kminhsu/Desktop/Xyce-Build/Xyce-6.2-build/src/DeviceModelPKG/test/libtest_dyn.so", RTLD_LAZY); 
-  cout << "error:" << dlerror() << endl;
-  cout << lib_handle << endl; 
+  //void* lib_handle = dlopen("/mnt/hgfs/kminhsu/Desktop/Xyce-Build/Xyce-6.2-build/src/DeviceModelPKG/test/libbsimcmg_module.so", RTLD_LAZY); 
+  //cout << "error:" << dlerror() << endl;
+  //cout << lib_handle << endl; 
+  //BSIMCMGIF BSIMCMG;
+  //BSIMCMGCreateInst("M1", "nmos1", "L=3e-8") = (BSIMCMGIF) dlsym(lib_handle, "BSIMCMG");
+  //if( NULL !=  BSIMCMG )
+  //  BSIMCMG(1.0, 0.3, 0.0, 0.0 );
+  //else  
+  //  cout << "Can not get BSIMCMG function from plugin : " << dlerror() << endl;
+ 
+  int ret = -1;
+  size_t nBufLen = 0;
+  char* psInstName = NULL;
+  nBufLen = mxGetN(prhs[0])*sizeof(mxChar)+1;
+  psInstName = (char*)mxMalloc(nBufLen);
+  ret = mxGetString(prhs[0], psInstName, nBufLen);
+ 
+  double Vd = mxGetScalar(prhs[1]);
+  double Vg = mxGetScalar(prhs[2]);
+  double Vs = mxGetScalar(prhs[3]);
+  double Ve = mxGetScalar(prhs[4]);
 
-  BSIMCMG(1.0, 0.3, 0.0, 0.0 );
+  BSIMCMG(psInstName, Vd, Vg, Vs, Ve);
 
-  vin1 = (double *) mxGetPr(prhs[0]);
-  vin2 = (double *) mxGetPr(prhs[1]);
-
-  mexcpp(*vin1, *vin2);
+  cout << psInstName << endl
+       << Vd << endl
+       << Vg << endl
+       << Vs << endl
+       << Ve << endl;
   return;
 }
