@@ -52,10 +52,10 @@ void mexFunction(
 
   BSIMCMG(psInstName, Vd, Vg, Vs, Ve);
 
-  cout << psInstName << endl
-       << Vd << endl
-       << Vg << endl
-       << Vs << endl
-       << Ve << endl;
+  //cout << psInstName << endl
+  //     << Vd << endl
+  //     << Vg << endl
+  //     << Vs << endl
+  //     << Ve << endl;
   return;
 }

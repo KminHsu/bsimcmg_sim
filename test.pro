@@ -35,4 +35,4 @@ SOURCES += main.cpp
 
 LIBS += -L/usr/lib/gcc/x86_64-redhat-linux6E/4.4.7 -L/usr/local/XyceLibs/Serial/lib -L/usr/local/lib -lxyce -lloca -lnox -lbelosepetra -lbelos -laztecoo -lifpack -ltrilinoscouplings -lamesos -lumfpack -lcolamd -lepetraext -lepetra -ltriutils -lteuchosparameterlist -lteuchoscomm -lteuchosnumerics -lteuchosremainder -lteuchoscore -lamd -llapack -lblas -L/usr/local/lib -L/usr/lib/gcc/x86_64-redhat-linux6E/4.4.7 -L/usr/local/XyceLibs/Serial/lib -L/lib -L/usr/lib/gcc/x86_64-redhat-linux/4.4.7 -L/usr/lib/gcc/x86_64-redhat-linux/4.4.7/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -lsuitesparseconfig -lcholmod -ldl -lrt -lutil -lgfortranbegin -lgfortran -lm -lkokkoscore -lfftw3
 
-QMAKE_CXXFLAGS += -g -static 
+QMAKE_CXXFLAGS += -g 

@@ -84,6 +84,10 @@ static const Xyce::Device::Configuration* pGlobalConfig = NULL;
 static QRegExp rxComment("[ ]*[*]+.*");
 static QRegExp rxModel("[ ]*[.]model[ ]*([a-zA-Z0-9]+)[ ]*([a-zA-Z0-9]+)[ ](level|LEVEL)=([0-9]+).*");
 static QRegExp rxKeyValue("[+][ ]*([A-Za-z0-9]+)[ ]*=[ ]*([0-9eE+-.]+).*");
+
+
+static QMap<QString, Xyce::Device::ADMSbsimcmg::Instance*> g_theInstMap;
+static N_DEV_DeviceMgr* g_pDevMgr = NULL;
  
 void IncludeModelCard(N_DEV_DeviceMgr* pDevMgr, char * pFileName)
 {
@@ -332,25 +336,46 @@ void GetJacobianMatrix(Xyce::Device::ADMSbsimcmg::Instance* pInst, double Vd, do
 
 }
 
-Xyce::Device::ADMSbsimcmg::Instance* CreateInstance(char* psInstName, char* psModelName, char* psInstParams)
+Xyce::Device::ADMSbsimcmg::Instance* CreateInst(char* psInstName, char* psModelName, char* psInstParams)
 {
   QString qsInstParams(psInstParams);
   QStringList paramList = qsInstParams.split(" ");
 
   cout << psInstName << " " << psModelName << endl;
   QStringList keyValue;
+  N_DEV_InstanceBlock IB2;
+  Xyce::Device::InstanceName instance(psInstName);
+  IB2.setInstanceName(instance);
+  IB2.setModelName(psModelName);
+
   for(int i = 0; i < paramList.size(); i++)
   {
     if( paramList.at(i).trimmed() == "" )
      continue;
     keyValue = paramList.at(i).trimmed().split("=");
     cout << keyValue.at(0).toLocal8Bit().data() << " = " << keyValue.at(1).toLocal8Bit().data() << endl;
+    IB2.params.push_back( Xyce::Device::Param((char*)keyValue.at(0).toLocal8Bit().data() , keyValue.at(1).toDouble(), true) );
   }
+
+  //IB2.params.push_back( Xyce::Device::Param("L"   , 3e-8, true) );
+  //IB2.params.push_back( Xyce::Device::Param("TFIN", 1.5e-8, true) );
+  //IB2.params.push_back( Xyce::Device::Param("NFIN", 10.0, true) );
+  //IB2.params.push_back( Xyce::Device::Param("NRS" , 1.0, true) );
+  //IB2.params.push_back( Xyce::Device::Param("NRD" , 1.0, true) );
+  Xyce::Device::ADMSbsimcmg::Instance* pInst = (Xyce::Device::ADMSbsimcmg::Instance*) g_pDevMgr->addDeviceInstance(IB2);
+
+  cout << "Line:" << __LINE__ << "\n";
+  pInst->processParams();
+  cout << "Line:" << __LINE__ << "\n";
+  pInst->getModel().processParams();
+  cout << "Line:" << __LINE__ << "\n";
+
+  g_theInstMap.insert( QString(psInstName), pInst);
+  return pInst;
 }
 
-void BSIMCMG(double Vd, double Vg, double Vs, double Ve)
+void Initialize()
 {
-  //Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>& rConfig = Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>::addConfiguration()
   //  .registerDevice("m", 107)
   //  .registerModelType("nmos", 107)
   //  .registerModelType("pmos", 107);
@@ -360,30 +385,19 @@ void BSIMCMG(double Vd, double Vg, double Vs, double Ve)
  
   Xyce::IO::CmdParse cp; 
   static N_DEV_DeviceMgr* pDevMgr = N_DEV_DeviceMgr::factory(cp);  // Allocate device manager:
+  g_pDevMgr = pDevMgr;
   pDevMgr->updateTemperature(25.0);
   cout << "Line:" << __LINE__ << "\n";
 
   IncludeModelCard(pDevMgr, "modelcard.nmos_xyce");
-  //IncludeModelCard(pDevMgr, "modelcard.pmos_xyce");
-  //SetupModelParamsForPMOS(pDevMgr);
-  //SetupModelParamsForNMOS(pDevMgr);
+  IncludeModelCard(pDevMgr, "modelcard.pmos_xyce");
   cout << "Line:" << __LINE__ << "\n";
+}
 
-  N_DEV_InstanceBlock IB2;
-  Xyce::Device::InstanceName instance("M1");
-  IB2.setInstanceName(instance);
-  IB2.setModelName("nmos1");
-  cout << "Line:" << __LINE__ << "\n";
+void BSIMCMG(char* psInstName, double Vd, double Vg, double Vs, double Ve, double** M, double** Q, double* F, double* I)
+{
+  //Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>& rConfig = Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>::addConfiguration()
 
-  IB2.params.push_back( Xyce::Device::Param("L"   , 3e-8, true) );
-  IB2.params.push_back( Xyce::Device::Param("TFIN", 1.5e-8, true) );
-  IB2.params.push_back( Xyce::Device::Param("NFIN", 10.0, true) );
-  IB2.params.push_back( Xyce::Device::Param("NRS" , 1.0, true) );
-  IB2.params.push_back( Xyce::Device::Param("NRD" , 1.0, true) );
-
-  CreateInstance("M1", "nmos1", "L=3e-8 TFIN=1.5e-8 NFIN=10.0 NRS=1.0 NRD=1.0");
-  
-  cout << "Line:" << __LINE__ << "\n";
   
   //Xyce::Device::ParametricData<void>& inst_parameters = pGlobalConfig->getInstanceParameters();
   //const Xyce::Device::ParameterMap& parameter_map = inst_parameters.getMap();
@@ -421,17 +435,12 @@ void BSIMCMG(double Vd, double Vg, double Vs, double Ve)
   //  }
   //}
 
-  Xyce::Device::ADMSbsimcmg::Instance* pInst = (Xyce::Device::ADMSbsimcmg::Instance*) pDevMgr->addDeviceInstance(IB2);
-  cout << "Line:" << __LINE__ << "\n";
-  pInst->processParams();
-  cout << "Line:" << __LINE__ << "\n";
-  pInst->getModel().processParams();
-  cout << "Line:" << __LINE__ << "\n";
-  
-
-  cout << "Line:" << __LINE__ << "\n";
-  GetJacobianMatrix(pInst, Vd, Vg, Vs, Ve);
-
+  //Xyce::Device::ADMSbsimcmg::Instance* pInst = CreateInst("M1", "nmos1", "L=3e-8 TFIN=1.5e-8 NFIN=10.0 NRS=1.0 NRD=1.0");
+  Xyce::Device::ADMSbsimcmg::Instance* pInst = g_theInstMap[QString(psInstName)];
+  if( NULL != pInst ) 
+    GetJacobianMatrix(pInst, Vd, Vg, Vs, Ve);
+  else
+    cout << "Can not find instance :" << psInstName << "\n";
 }
 
 int main(int nArgc, char** pArgv) {  
@@ -440,8 +449,29 @@ int main(int nArgc, char** pArgv) {
   double Vg = 1.0;
   double Vs = 0.0;
   double Ve = 0.0;
+ 
+  Initialize();
+  CreateInst("M1", "nmos1", "L=3e-8 TFIN=1.5e-8 NFIN=10.0 NRS=1.0 NRD=1.0");
 
-  BSIMCMG(Vd, Vg, Vs, Ve);
+  double** M;
+  double** Q;
+  double* F;
+  double* I;
+
+  for(int i = 0; i < 4; i++ )
+  {
+    F = new double[4];
+    I = new double[4];
+    M = new double*[4];
+    Q = new double*[4];
+    for(int i = 0; i < 4; i++ )
+    {
+      M[i] = new double[4];
+      Q[i] = new double[4];
+    }
+  }
+  
+  BSIMCMG("M1", Vd, Vg, Vs, Ve, M, Q, F, I);
  
   return 0;
 }
