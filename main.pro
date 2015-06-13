@@ -3,7 +3,6 @@
 ######################################################################
 
 TEMPLATE = app
-CONFIG += sharelib
 TARGET = bsimcmg_module
 DEPENDPATH += .
 INCLUDEPATH += . \

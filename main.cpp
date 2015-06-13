@@ -320,20 +320,46 @@ void loadDAEdFdx(Xyce::Device::ADMSbsimcmg::Instance* pInst, Epetra_SerialDenseM
   M(admsNodeID_si,admsNodeID_si) +=  -pInst->staticContributions[admsNodeID_si].dx(admsProbeID_V_s_si) +pInst->staticContributions[admsNodeID_si].dx(admsProbeID_V_si_s) -pInst->staticContributions[admsNodeID_si].dx(admsProbeID_V_e_si) -pInst->staticContributions[admsNodeID_si].dx(admsProbeID_V_g_si) -pInst->staticContributions[admsNodeID_si].dx(admsProbeID_V_di_si);
 }
 
-void GetJacobianMatrix(Xyce::Device::ADMSbsimcmg::Instance* pInst, double Vd, double Vg, double Vs, double Ve)
+void GetJacobianMatrix(Xyce::Device::ADMSbsimcmg::Instance* pInst, double Vd, double Vg, double Vs, double Ve, double* M, double* Q, double* F, double* I)
 {
-  double Vdi = 0.29999963187823330824;
-  double Vsi = 3.6812176753204769947e-07;
+  //double Vdi = 0.29999963187823330824;
+  //double Vsi = 3.6812176753204769947e-07;
+  double Vdi = 0.0;
+  double Vsi = 0.0;
   int nNumNode = pInst->numIntVars + pInst->numExtVars;
-  Epetra_SerialDenseMatrix Q(nNumNode, nNumNode);
-  Epetra_SerialDenseMatrix M(nNumNode, nNumNode);
-  pInst->updateIntermediateVarsMy(Vd, Vg, Vs, Ve, Vdi, Vsi);
-  loadDAEdFdx(pInst, M);
-  loadDAEdQdx(pInst, Q);
+  Epetra_SerialDenseMatrix QQ(nNumNode, nNumNode);
+  Epetra_SerialDenseMatrix MM(nNumNode, nNumNode);
+  Epetra_SerialDenseMatrix FF(nNumNode, 1);
+  Epetra_SerialDenseMatrix B(pInst->numExtVars, pInst->numExtVars);
+  Epetra_SerialDenseMatrix invB(pInst->numExtVars, pInst->numExtVars);
 
-  cout << "M =\n" << M;
-  cout << "Q =\n" << Q;
+  pInst->updateIntermediateVarsMy(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  loadDAEdFdx(pInst, MM);
+  loadDAEdQdx(pInst, QQ);
+  for( int i = 0; i < 4; i++ )
+  {
+    for(int j = 0; j < 4; j++)
+    {
+      M[i*4+j] = MM(i,j);
+      Q[i*4+j] = QQ(i,j);
+    }
+  }
+  cout << "MM =\n" << MM;
+  cout << "QQ =\n" << QQ;
 
+  //I[admsNodeID_d] = pInst->staticContributions[admsNodeID_d].val();
+  //I[admsNodeID_g] = pInst->staticContributions[admsNodeID_g].val();
+  //I[admsNodeID_s] = pInst->staticContributions[admsNodeID_s].val();
+  //I[admsNodeID_e] = pInst->staticContributions[admsNodeID_e].val();
+  //F[admsNodeID_d] = pInst->staticContributions[admsNodeID_d].val();
+  //F[admsNodeID_g] = pInst->staticContributions[admsNodeID_g].val();
+  //F[admsNodeID_s] = pInst->staticContributions[admsNodeID_s].val();
+  //F[admsNodeID_e] = pInst->staticContributions[admsNodeID_e].val();
+  
+  //for(int i = 0; i < 3; i++ )
+  //{
+  //  pInst->updateIntermediateVarsMy(Vd, Vg, Vs, Ve, Vdi, Vsi);
+  //}
 }
 
 Xyce::Device::ADMSbsimcmg::Instance* CreateInst(char* psInstName, char* psModelName, char* psInstParams)
@@ -394,7 +420,7 @@ void Initialize()
   cout << "Line:" << __LINE__ << "\n";
 }
 
-void BSIMCMG(char* psInstName, double Vd, double Vg, double Vs, double Ve, double** M, double** Q, double* F, double* I)
+void BSIMCMG(char* psInstName, double Vd, double Vg, double Vs, double Ve, double* M, double* Q, double* F, double* I)
 {
   //Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>& rConfig = Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>::addConfiguration()
 
@@ -437,8 +463,10 @@ void BSIMCMG(char* psInstName, double Vd, double Vg, double Vs, double Ve, doubl
 
   //Xyce::Device::ADMSbsimcmg::Instance* pInst = CreateInst("M1", "nmos1", "L=3e-8 TFIN=1.5e-8 NFIN=10.0 NRS=1.0 NRD=1.0");
   Xyce::Device::ADMSbsimcmg::Instance* pInst = g_theInstMap[QString(psInstName)];
-  if( NULL != pInst ) 
-    GetJacobianMatrix(pInst, Vd, Vg, Vs, Ve);
+  if( NULL != pInst )
+  {
+    GetJacobianMatrix(pInst, Vd, Vg, Vs, Ve, M, Q, F, I);
+  }
   else
     cout << "Can not find instance :" << psInstName << "\n";
 }
@@ -453,23 +481,15 @@ int main(int nArgc, char** pArgv) {
   Initialize();
   CreateInst("M1", "nmos1", "L=3e-8 TFIN=1.5e-8 NFIN=10.0 NRS=1.0 NRD=1.0");
 
-  double** M;
-  double** Q;
+  double* M;
+  double* Q;
   double* F;
   double* I;
 
-  for(int i = 0; i < 4; i++ )
-  {
-    F = new double[4];
-    I = new double[4];
-    M = new double*[4];
-    Q = new double*[4];
-    for(int i = 0; i < 4; i++ )
-    {
-      M[i] = new double[4];
-      Q[i] = new double[4];
-    }
-  }
+  M = new double[4*4];
+  Q = new double[4*4];
+  F = new double[4];
+  I = new double[4];
   
   BSIMCMG("M1", Vd, Vg, Vs, Ve, M, Q, F, I);
  

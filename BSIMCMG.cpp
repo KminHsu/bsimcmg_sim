@@ -5,19 +5,17 @@
 
 using namespace std;
 
-void BSIMCMG(char* psInstName, double Vd, double Vg, double Vs, double Ve);
+void BSIMCMG(char* psInstName, double Vd, double Vg, double Vs, double Ve, double* M, double* Q, double* F, double* I);
 
-typedef void (*BSIMCMGIF)(char*, double, double, double, double); 
+typedef void (*BSIMCMGIF)(char*, double, double, double, double, double* , double* , double* , double* ); 
 
 void mexFunction(
 		 int          nlhs,
-		 mxArray      *[],
+		 mxArray      *plhs[],
 		 int          nrhs,
 		 const mxArray *prhs[]
 		 )
 {
-  double      *vin1, *vin2;
-
   /* Check for proper number of arguments */
 
   //if (nrhs != 2) {
@@ -44,13 +42,23 @@ void mexFunction(
   nBufLen = mxGetN(prhs[0])*sizeof(mxChar)+1;
   psInstName = (char*)mxMalloc(nBufLen);
   ret = mxGetString(prhs[0], psInstName, nBufLen);
+
+  plhs[0] = mxCreateDoubleMatrix(4, 4, mxREAL);
+  plhs[1] = mxCreateDoubleMatrix(4, 4, mxREAL);
+  plhs[2] = mxCreateDoubleMatrix(4, 1, mxREAL);
+  plhs[3] = mxCreateDoubleMatrix(4, 1, mxREAL);
+
+  double* M = mxGetPr(plhs[0]);
+  double* Q = mxGetPr(plhs[1]);
+  double* F = mxGetPr(plhs[2]);
+  double* I = mxGetPr(plhs[3]);
  
   double Vd = mxGetScalar(prhs[1]);
   double Vg = mxGetScalar(prhs[2]);
   double Vs = mxGetScalar(prhs[3]);
   double Ve = mxGetScalar(prhs[4]);
 
-  BSIMCMG(psInstName, Vd, Vg, Vs, Ve);
+  BSIMCMG(psInstName, Vd, Vg, Vs, Ve, M, Q, F, I);
 
   //cout << psInstName << endl
   //     << Vd << endl
