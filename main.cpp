@@ -34,6 +34,7 @@
 #include <QMap>
 
 #include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_SerialDenseSolver.h"
 using namespace std;
 using namespace Xyce;
 using namespace Device;
@@ -320,46 +321,145 @@ void loadDAEdFdx(Xyce::Device::ADMSbsimcmg::Instance* pInst, Epetra_SerialDenseM
   M(admsNodeID_si,admsNodeID_si) +=  -pInst->staticContributions[admsNodeID_si].dx(admsProbeID_V_s_si) +pInst->staticContributions[admsNodeID_si].dx(admsProbeID_V_si_s) -pInst->staticContributions[admsNodeID_si].dx(admsProbeID_V_e_si) -pInst->staticContributions[admsNodeID_si].dx(admsProbeID_V_g_si) -pInst->staticContributions[admsNodeID_si].dx(admsProbeID_V_di_si);
 }
 
-void GetJacobianMatrix(Xyce::Device::ADMSbsimcmg::Instance* pInst, double Vd, double Vg, double Vs, double Ve, double* M, double* Q, double* F, double* I)
+void updateIntermediateVarsMy(Xyce::Device::ADMSbsimcmg::Instance* pInst, 
+                              double Vd, 
+                              double Vg, 
+                              double Vs, 
+                              double Ve,
+                              double Vdi,
+                              double Vsi,
+                              Epetra_SerialDenseMatrix& M,
+                              Epetra_SerialDenseMatrix& Q,
+                              Epetra_SerialDenseMatrix& F,
+                              Epetra_SerialDenseMatrix& I
+)
 {
-  //double Vdi = 0.29999963187823330824;
-  //double Vsi = 3.6812176753204769947e-07;
+  pInst->updateIntermediateVarsMy(Vd, Vg, Vs, Ve, Vdi, Vsi);
+  loadDAEdFdx(pInst, M);
+  loadDAEdQdx(pInst, Q);
+  I(admsNodeID_d,0) = pInst->staticContributions[admsNodeID_d].val();
+  I(admsNodeID_g,0) = pInst->staticContributions[admsNodeID_g].val();
+  I(admsNodeID_s,0) = pInst->staticContributions[admsNodeID_s].val();
+  I(admsNodeID_e,0) = pInst->staticContributions[admsNodeID_e].val();
+  I(admsNodeID_di,0) = pInst->staticContributions[admsNodeID_di].val();
+  I(admsNodeID_si,0) = pInst->staticContributions[admsNodeID_si].val();
+
+  F(admsNodeID_d,0) = pInst->staticContributions[admsNodeID_d].val();
+  F(admsNodeID_g,0) = pInst->staticContributions[admsNodeID_g].val();
+  F(admsNodeID_s,0) = pInst->staticContributions[admsNodeID_s].val();
+  F(admsNodeID_e,0) = pInst->staticContributions[admsNodeID_e].val();
+  F(admsNodeID_di,0) = pInst->staticContributions[admsNodeID_di].val();
+  F(admsNodeID_si,0) = pInst->staticContributions[admsNodeID_si].val();
+  cout << "M =\n" << M;
+  cout << "Q =\n" << Q;
+}
+
+void GetJacobianMatrix(Xyce::Device::ADMSbsimcmg::Instance* pInst, 
+double Vd,
+double Vg,
+double Vs,
+double Ve,
+double* pM,
+double* pQ,
+double* pF,
+double* pI)
+{
+  unsigned int nIter = 100;
   double Vdi = 0.0;
   double Vsi = 0.0;
+  int nNumExtNode = pInst->numExtVars;
+  int nNumIntNode = pInst->numExtVars;
   int nNumNode = pInst->numIntVars + pInst->numExtVars;
-  Epetra_SerialDenseMatrix QQ(nNumNode, nNumNode);
-  Epetra_SerialDenseMatrix MM(nNumNode, nNumNode);
-  Epetra_SerialDenseMatrix FF(nNumNode, 1);
-  Epetra_SerialDenseMatrix B(pInst->numExtVars, pInst->numExtVars);
-  Epetra_SerialDenseMatrix invB(pInst->numExtVars, pInst->numExtVars);
+  Epetra_SerialDenseMatrix Q_(nNumNode, nNumNode);
+  Epetra_SerialDenseMatrix M_(nNumNode, nNumNode);
+  Epetra_SerialDenseMatrix I_(nNumNode, 1);
+  Epetra_SerialDenseMatrix F_(nNumNode, 1);
+  Epetra_SerialDenseMatrix Vdisi(pInst->numIntVars, 1);
+  Epetra_SerialDenseMatrix Fdisi(pInst->numIntVars, 1);
+  Epetra_SerialDenseMatrix B_(pInst->numIntVars, pInst->numIntVars);
+  Epetra_SerialDenseMatrix invB_(pInst->numIntVars, pInst->numIntVars);
+  Epetra_SerialDenseSolver solver;
 
-  pInst->updateIntermediateVarsMy(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-  loadDAEdFdx(pInst, MM);
-  loadDAEdQdx(pInst, QQ);
-  for( int i = 0; i < 4; i++ )
+  cout << setprecision(20); 
+  for(int i = 0; i < nIter; i++ )
   {
-    for(int j = 0; j < 4; j++)
+    M_.Scale(0.0);
+    Q_.Scale(0.0);
+    I_.Scale(0.0);
+    F_.Scale(0.0);
+ 
+    if( i == 0 )
     {
-      M[i*4+j] = MM(i,j);
-      Q[i*4+j] = QQ(i,j);
+      updateIntermediateVarsMy(pInst, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, M_, Q_, F_, I_);
+      Fdisi(0,0) = -(Vd*M_(4,0)+Vg*M_(4,1)+Vs*M_(4,2)+Ve*M_(4,3));
+      Fdisi(1,0) = -(Vd*M_(5,0)+Vg*M_(5,1)+Vs*M_(5,2)+Ve*M_(5,3));
     }
-  }
-  cout << "MM =\n" << MM;
-  cout << "QQ =\n" << QQ;
+    else
+    {
+      updateIntermediateVarsMy(pInst, Vd, Vg, Vs, Ve, Vdi, Vsi, M_, Q_, F_, I_);
+      Fdisi(0,0) = -F_(admsNodeID_di,0);
+      Fdisi(1,0) = -F_(admsNodeID_si,0);
+    }
+    cout << "M_ = " << endl << M_; 
+    cout << "Q_ = " << endl << Q_; 
+    cout << "F_ = " << endl << F_; 
+    cout << "I_ = " << endl << I_; 
 
-  //I[admsNodeID_d] = pInst->staticContributions[admsNodeID_d].val();
-  //I[admsNodeID_g] = pInst->staticContributions[admsNodeID_g].val();
-  //I[admsNodeID_s] = pInst->staticContributions[admsNodeID_s].val();
-  //I[admsNodeID_e] = pInst->staticContributions[admsNodeID_e].val();
-  //F[admsNodeID_d] = pInst->staticContributions[admsNodeID_d].val();
-  //F[admsNodeID_g] = pInst->staticContributions[admsNodeID_g].val();
-  //F[admsNodeID_s] = pInst->staticContributions[admsNodeID_s].val();
-  //F[admsNodeID_e] = pInst->staticContributions[admsNodeID_e].val();
-  
-  //for(int i = 0; i < 3; i++ )
-  //{
-  //  pInst->updateIntermediateVarsMy(Vd, Vg, Vs, Ve, Vdi, Vsi);
-  //}
+    B_(0,0) = M_(admsNodeID_di,admsNodeID_di); 
+    B_(0,1) = M_(admsNodeID_di,admsNodeID_si);
+    B_(1,0) = M_(admsNodeID_si,admsNodeID_di);
+    B_(1,1) = M_(admsNodeID_si,admsNodeID_si);
+    invB_ = B_;
+    cout << "B_ = " << endl << B_; 
+
+    cout << "line = " << __LINE__ << endl;
+    
+    //Crash in Matlab
+    //solver.SetMatrix(invB_);
+    //solver.Invert();
+
+    invB_(0,0) =  B_(1,1); 
+    invB_(0,1) = -B_(0,1); 
+    invB_(1,0) = -B_(1,0);
+    invB_(1,1) =  B_(0,0);
+    invB_.Scale( 1.0/(B_(0,0)*B_(1,1) - B_(1,0)*B_(0,1)) ); 
+
+    cout << "line = " << __LINE__ << endl;
+    cout << "invB_ = " << endl << invB_; 
+    cout << "Fdisi = " << endl << Fdisi; 
+
+    cout << "line = " << __LINE__ << endl;
+    //Not work in Matlab
+    //Vdisi.Multiply('N', 'N', 1.0, invB_, Fdisi, 0.0); 
+    Vdisi(0,0) = invB_(0,0)*Fdisi(0,0) + invB_(0,1)*Fdisi(1,0);
+    Vdisi(1,0) = invB_(1,0)*Fdisi(0,0) + invB_(1,1)*Fdisi(1,0);
+    cout << "Vdisi = " << endl << Vdisi; 
+
+    if( i != 0 && abs(Vdisi(0,0)) < 1e-12 && abs(Vdisi(1,0)) < 1e-12 )
+    {
+      cout << "Device convergence!!" << endl;
+      cout << "Iter = " << i+1 << endl;
+      for(int m = 0; m < nNumExtNode; m++)
+      {
+        pF[m] = F_(m,0);
+        pI[m] = I_(m,0);
+        for(int n = 0; n < nNumExtNode; n++)
+        {
+          pM[m*nNumExtNode+n] = M_(m,n);
+          pQ[m*nNumExtNode+n] = Q_(m,n);
+        }
+      }
+      break;
+    }
+    Vdi = Vdi + Vdisi(0,0);
+    Vsi = Vsi + Vdisi(1,0);
+  } 
+  cout << "Vd = " << Vd << endl
+       << "Vg = " << Vg << endl
+       << "Vs = " << Vs << endl
+       << "Ve = " << Ve << endl
+       << "Vdi = " << Vdi << endl
+       << "Vsi = " << Vsi << endl;
 }
 
 Xyce::Device::ADMSbsimcmg::Instance* CreateInst(char* psInstName, char* psModelName, char* psInstParams)
@@ -423,8 +523,6 @@ void Initialize()
 void BSIMCMG(char* psInstName, double Vd, double Vg, double Vs, double Ve, double* M, double* Q, double* F, double* I)
 {
   //Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>& rConfig = Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>::addConfiguration()
-
-  
   //Xyce::Device::ParametricData<void>& inst_parameters = pGlobalConfig->getInstanceParameters();
   //const Xyce::Device::ParameterMap& parameter_map = inst_parameters.getMap();
   //for (ParameterMap::const_iterator it = parameter_map.begin(); it != parameter_map.end(); ++it) {
