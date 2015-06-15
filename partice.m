@@ -1,36 +1,67 @@
-h = 0.1
-X0 = [2 ;0 ;0 ;0 ;0]
-G = [ 1 -1 0 0 1 ; -1 1 0 1 0; 0 0 1 -1 0; 0 1 -1 0 0; 1 0 0 0 0]
-C = [ 0 0 0 0 0; 0 1 0 0 0; 0 0 1 0 0; 0 0 0 -2 0; 0 0 0 0 0 ]
-W = [0 ;0 ;0 ;0 ;1]
+% h = 0.1
+% X0 = [2 ;0 ;0 ;0 ;0]
+% G = [ 1 -1 0 0 1 ; -1 1 0 1 0; 0 0 1 -1 0; 0 1 -1 0 0; 1 0 0 0 0]
+% C = [ 0 0 0 0 0; 0 1 0 0 0; 0 0 1 0 0; 0 0 0 -2 0; 0 0 0 0 0 ]
+% W = [0 ;0 ;0 ;0 ;1]
 
-h = 0.0001
-x = linspace(0.0001, 0.1, 100000)
-BE_y = linspace(0.0001, 0.1, 100000)
-TR_y = linspace(0.0001, 0.1, 100000)
+% G = [ 1 -1 1 ; -1 1 0; 1 0 0 ]
+% C = [ 0 0 0; 0 1 0; 0 0 0 ]
+% W = [0 ;0 ;1]
+
+G = [ 1 -1 1 ; -1 1 0; 1 0 0 ]
+C = [ 0 0 0; 0 1 0; 0 0 0 ]
+W = [0 ;0 ;1]
+
+% h = 0.001
+h = 5e-6
+len = 20000
+x = linspace(0.0001, 0.1, len);
+BE_y = linspace(0.0001, 0.1, len);
+TR_y = linspace(0.0001, 0.1, len);
 
 %%%BE
+X0 = inv(G)*W
 X = X0;
 M = ( G + 1/h * C );
 for i = 1:length(x)
+  % W(5) = sin(2*pi*60*x(i));
+  if i ==  floor(len/2)
+    W(3) = 0
+  end
   X = inv(M)*(1/h*C*X+W);
-  BE_y(i) = X(3);
+  BE_y(i) = X(2);
 end
 BE_X = X;
 
-%%%TR
-X = X0;
-M1 = ( G + 2/h*C );
-M2 = -1*( G - 2/h*C );
-for i = 1:length(x)
-  X = inv(M1)*(M2*X + W + W);
-  TR_y(i) = X(3);
-end
-TR_X = X;
+% %%%TR
+% X = X0;
+% M1 = ( G + 2/h*C );
+% M2 = -1*( G - 2/h*C );
+% for i = 1:length(x)
+%   X = inv(M1)*(M2*X + W + W);
+%   TR_y(i) = X(3);
+% end
+% TR_X = X;
+
+% %%%N-R & BE
+% X = X0;
+% M = ( G + 1/h * C );
+% for i = 1:length(x)
+%   W(5) = sin(2*pi*x(i));
+%   F = M*X - (1/h*C*X+W);
+%   J = M-1/h*C;
+%   %solve J*dX = -F;
+%   dX = -1*J\F;
+%   X = X + dX;
+%   NR_BE_y = X(3);
+% end
+% NR_BE_X = X;
 
 figure
 %plot(x, BE_y, '*', x, TR_y, 'O')
-plot(x, BE_y-TR_y)
+%plot(x, BE_y-TR_y)
+plot(x, BE_y)
+%plot(x, NR_BE_y, '*')
 
 % %%%BE
 % X = X0;
