@@ -8,25 +8,33 @@
 % C = [ 0 0 0; 0 1 0; 0 0 0 ]
 % W = [0 ;0 ;1]
 
+% There are two resistors
 G = [ 1e-3 -1e-3 1 ; -1e-3 1e-3 0; 1 0 0 ] + [ 0 0 0; 0 1e-3 0; 0 0 0]
+% Only one capacitor
 C = [ 0 0 0; 0 0.001e-6 0; 0 0 0 ]
+% Time step
 h = 1e-8
+% Time domain, from 0 to 2ms, time step is h
 x = 0:h:2e-6
+% Store the BE result
 BE_y = zeros(length(x),1);
+% store the TR result
 TR_y = zeros(length(x),1);
 
-%%%BE
+%%%Backward Euler Method
 W = [0; 0; vin(1)];
 X0 = inv(G)*W
 X = X0;
 M = ( G + 1/h * C );
 for i = 2:length(x)
   W = [0 ; 0; vin(x(i))];
+  % In here, I don't use Newton method. I just use inverse function to solve this equation
   X = inv(M)*(1/h*C*X+W);
+  % Store Vout, that is Vc
   BE_y(i) = X(2);
 end
 
-%%%TR
+%%%Trapzoidal Method
 W = [0; 0; vin(1)];
 X0 = inv(G)*W;
 X = X0;
@@ -34,7 +42,9 @@ M1 = ( G + 2/h*C );
 M2 = -1*( G - 2/h*C );
 for i = 2:length(x)
   W = [0 ; 0; vin(x(i))];
+  % In here, I don't use Newton method. I just use inverse function to solve this equation
   X = inv(M1)*(M2*X + W + W);
+  % Store Vout, that is Vc
   TR_y(i) = X(2);
 end
 
