@@ -97,10 +97,10 @@ G = [
 ]
 
 Gn = [
-   -GG(1,1:6) 1 0;
-   -GG(2,1:6) 0 1;
-   1 0 0 0 0 0 0 0;
-   0 1 0 0 0 0 0 0
+   -GG(1,1:2) 1 0;
+   -GG(2,1:2) 0 1;
+   1 0 0 0;
+   0 1 0 0
 ]
 
 
@@ -592,14 +592,14 @@ double* pI)
         }
       }
 
-      for(int m = 0; m < nNumExtNode; m++)
-      {
-        pF[m] = -(M_(m,5)*Vdi+M_(m,6)*Vsi);
-        pI[m] = I_(m,0);
-      }
       Vdi = Vdi + Vdisi(0,0);
       Vsi = Vsi + Vdisi(1,0);
-      break;
+      for(int m = 0; m < nNumExtNode; m++)
+      {
+        pF[m] = -(M_(m,4)*Vdi+M_(m,5)*Vsi);
+        pI[m] = I_(m,0);
+      }
+     break;
     }
     Vdi = Vdi + Vdisi(0,0);
     Vsi = Vsi + Vdisi(1,0);
