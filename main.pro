@@ -29,7 +29,7 @@ INCLUDEPATH += . \
                /home/kminhsu/Desktop/reg/Xyce-6.2-build/src/./LoaderServicesPKG/include \
                /usr/local/XyceLibs/Serial/include
 
-QMAKE_CXXFLAGS += -g 
+QMAKE_CXXFLAGS += -g -fpic
 QMAKE_CXX = /usr/bin/g++
 QMAKE_LINK = /usr/bin/g++
 
