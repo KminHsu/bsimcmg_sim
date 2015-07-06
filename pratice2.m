@@ -34,21 +34,19 @@ y = zeros(length(x),1);
 
 %%%Backward Euler Method
 W = [0; 0; 0.3; vin(x(1))];
-[Gm, Qm, F, I, J] = BSIMCMG('M1',0.3,vin(X(1)),0,0);
+[Gm, Qm, F, I, J] = BSIMCMG('M1',0.3,vin(x(1)),0,0);
 for i = 1:2
   for j = 1:2
     G(i + (j-1)*4) = -Gm(i + (j-1)*4);
     C(i + (j-1)*4) = -Qm(i + (j-1)*4);
   end
 end
-X0 = Gm\ ([-F(1); -F(2); 0; 0] + W);
+X0 = G\ ([-F(1); -F(2); 0; 0] + W);
 X = X0;
+BE_y(1) = X(2);
 
-BE_y(1) = vin(x(1));
 for i = 2:length(x)
-  BE_y(i) = X(3);
-  W = [0; 0; 0.3; vin(x(i))];
-  [Gm, Qm, F, I, J] = BSIMCMG('M1',0.3, vin(x(i)), 0, 0)
+  [Gm, Qm, F, I, J] = BSIMCMG('M1',0.3, vin(x(i)), 0, 0);
   for i = 1:2
     for j = 1:2
       G(i + (j-1)*4) = -Gm(i + (j-1)*4);
@@ -57,8 +55,8 @@ for i = 2:length(x)
   end
   M = ( G + 1/h * C );
   W = [0; 0; 0.3; vin(x(i))];
-  % In here, I don't use Newton method. I just use inverse function to solve this equation
-  X = inv(M)*(1/h*C*X+W+[-F(1);-F(2);0;0]+[-J(1)/h;-J(2)/h;0;0]);
+  X = M\(1/h*C*X+W+[-F(1);-F(2);0;0]+[-J(1)/h;-J(2)/h;0;0]);
+  BE_y(i) = X(2);
 end
 plot(x, BE_y);
 
