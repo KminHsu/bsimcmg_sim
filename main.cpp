@@ -472,7 +472,8 @@ void updateIntermediateVarsMy(Xyce::Device::ADMSbsimcmg::Instance* pInst,
                               Epetra_SerialDenseMatrix& M,
                               Epetra_SerialDenseMatrix& Q,
                               Epetra_SerialDenseMatrix& F,
-                              Epetra_SerialDenseMatrix& I
+                              Epetra_SerialDenseMatrix& I,
+                              Epetra_SerialDenseMatrix& J  //dynamicContribution
 )
 {
   pInst->updateIntermediateVarsMy(Vd, Vg, Vs, Ve, Vdi, Vsi);
@@ -491,8 +492,19 @@ void updateIntermediateVarsMy(Xyce::Device::ADMSbsimcmg::Instance* pInst,
   F(admsNodeID_e,0) = pInst->staticContributions[admsNodeID_e].val();
   F(admsNodeID_di,0) = pInst->staticContributions[admsNodeID_di].val();
   F(admsNodeID_si,0) = pInst->staticContributions[admsNodeID_si].val();
+
+  J(admsNodeID_d,0) =  pInst->dynamicContributions[admsNodeID_d].val();
+  J(admsNodeID_g,0) =  pInst->dynamicContributions[admsNodeID_g].val();
+  J(admsNodeID_s,0) =  pInst->dynamicContributions[admsNodeID_s].val();
+  J(admsNodeID_e,0) =  pInst->dynamicContributions[admsNodeID_e].val();
+  J(admsNodeID_di,0) = pInst->dynamicContributions[admsNodeID_di].val();
+  J(admsNodeID_si,0) = pInst->dynamicContributions[admsNodeID_si].val();
+ 
   cout << "M =\n" << M;
   cout << "Q =\n" << Q;
+  cout << "I =\n" << I;
+  cout << "F =\n" << F;
+  cout << "J =\n" << J;
 }
 
 void GetJacobianMatrix(Xyce::Device::ADMSbsimcmg::Instance* pInst, 
@@ -503,7 +515,9 @@ double Ve,
 double* pM,
 double* pQ,
 double* pF,
-double* pI)
+double* pI,
+double* pJ
+)
 {
   unsigned int nIter = 100;
   double Vdi = 0.0;
@@ -515,6 +529,7 @@ double* pI)
   Epetra_SerialDenseMatrix M_(nNumNode, nNumNode);
   Epetra_SerialDenseMatrix I_(nNumNode, 1);
   Epetra_SerialDenseMatrix F_(nNumNode, 1);
+  Epetra_SerialDenseMatrix J_(nNumNode, 1);
   Epetra_SerialDenseMatrix Vdisi(pInst->numIntVars, 1);
   Epetra_SerialDenseMatrix Fdisi(pInst->numIntVars, 1);
   Epetra_SerialDenseMatrix B_(pInst->numIntVars, pInst->numIntVars);
@@ -531,13 +546,13 @@ double* pI)
  
     if( i == 0 )
     {
-      updateIntermediateVarsMy(pInst, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, M_, Q_, F_, I_);
+      updateIntermediateVarsMy(pInst, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, M_, Q_, F_, I_, J_);
       Fdisi(0,0) = -(Vd*M_(4,0)+Vg*M_(4,1)+Vs*M_(4,2)+Ve*M_(4,3));
       Fdisi(1,0) = -(Vd*M_(5,0)+Vg*M_(5,1)+Vs*M_(5,2)+Ve*M_(5,3));
     }
     else
     {
-      updateIntermediateVarsMy(pInst, Vd, Vg, Vs, Ve, Vdi, Vsi, M_, Q_, F_, I_);
+      updateIntermediateVarsMy(pInst, Vd, Vg, Vs, Ve, Vdi, Vsi, M_, Q_, F_, I_, J_);
       Fdisi(0,0) = -F_(admsNodeID_di,0);
       Fdisi(1,0) = -F_(admsNodeID_si,0);
     }
@@ -545,6 +560,7 @@ double* pI)
     cout << "Q_ = " << endl << Q_; 
     cout << "F_ = " << endl << F_; 
     cout << "I_ = " << endl << I_; 
+    cout << "J_ = " << endl << J_; 
 
     B_(0,0) = M_(admsNodeID_di,admsNodeID_di); 
     B_(0,1) = M_(admsNodeID_di,admsNodeID_si);
@@ -598,6 +614,7 @@ double* pI)
       {
         pF[m] = -(M_(m,4)*Vdi+M_(m,5)*Vsi);
         pI[m] = I_(m,0);
+        pJ[m] = -(Q_(m,4)*Vdi+Q_(m,5)*Vsi);
       }
      break;
     }
@@ -670,7 +687,7 @@ void Initialize()
   cout << "Line:" << __LINE__ << "\n";
 }
 
-void BSIMCMG(char* psInstName, double Vd, double Vg, double Vs, double Ve, double* M, double* Q, double* F, double* I)
+void BSIMCMG(char* psInstName, double Vd, double Vg, double Vs, double Ve, double* M, double* Q, double* F, double* I, double* J)
 {
   //Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>& rConfig = Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>::addConfiguration()
   //Xyce::Device::ParametricData<void>& inst_parameters = pGlobalConfig->getInstanceParameters();
@@ -713,7 +730,7 @@ void BSIMCMG(char* psInstName, double Vd, double Vg, double Vs, double Ve, doubl
   Xyce::Device::ADMSbsimcmg::Instance* pInst = g_theInstMap[QString(psInstName)];
   if( NULL != pInst )
   {
-    GetJacobianMatrix(pInst, Vd, Vg, Vs, Ve, M, Q, F, I);
+    GetJacobianMatrix(pInst, Vd, Vg, Vs, Ve, M, Q, F, I, J);
   }
   else
     cout << "Can not find instance :" << psInstName << "\n";
@@ -733,13 +750,15 @@ int main(int nArgc, char** pArgv) {
   double* Q;
   double* F;
   double* I;
+  double* J;
 
   M = new double[4*4];
   Q = new double[4*4];
   F = new double[4];
   I = new double[4];
+  J = new double[4];
   
-  BSIMCMG("M1", Vd, Vg, Vs, Ve, M, Q, F, I);
+  BSIMCMG("M1", Vd, Vg, Vs, Ve, M, Q, F, I, J);
  
   return 0;
 }

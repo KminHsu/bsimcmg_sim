@@ -5,9 +5,9 @@
 
 using namespace std;
 
-void BSIMCMG(char* psInstName, double Vd, double Vg, double Vs, double Ve, double* M, double* Q, double* F, double* I);
+void BSIMCMG(char* psInstName, double Vd, double Vg, double Vs, double Ve, double* M, double* Q, double* F, double* I, double* J);
 
-typedef void (*BSIMCMGIF)(char*, double, double, double, double, double* , double* , double* , double* ); 
+typedef void (*BSIMCMGIF)(char*, double, double, double, double, double* , double* , double* , double*, double *); 
 
 void mexFunction(
 		 int          nlhs,
@@ -47,18 +47,20 @@ void mexFunction(
   plhs[1] = mxCreateDoubleMatrix(4, 4, mxREAL);
   plhs[2] = mxCreateDoubleMatrix(4, 1, mxREAL);
   plhs[3] = mxCreateDoubleMatrix(4, 1, mxREAL);
+  plhs[4] = mxCreateDoubleMatrix(4, 1, mxREAL);
 
   double* M = mxGetPr(plhs[0]);
   double* Q = mxGetPr(plhs[1]);
   double* F = mxGetPr(plhs[2]);
   double* I = mxGetPr(plhs[3]);
+  double* J = mxGetPr(plhs[4]);
  
   double Vd = mxGetScalar(prhs[1]);
   double Vg = mxGetScalar(prhs[2]);
   double Vs = mxGetScalar(prhs[3]);
   double Ve = mxGetScalar(prhs[4]);
 
-  BSIMCMG(psInstName, Vd, Vg, Vs, Ve, M, Q, F, I);
+  BSIMCMG(psInstName, Vd, Vg, Vs, Ve, M, Q, F, I, J);
 
   //cout << psInstName << endl
   //     << Vd << endl
