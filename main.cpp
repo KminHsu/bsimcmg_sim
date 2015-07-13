@@ -473,7 +473,8 @@ void updateIntermediateVarsMy(Xyce::Device::ADMSbsimcmg::Instance* pInst,
                               Epetra_SerialDenseMatrix& Q,
                               Epetra_SerialDenseMatrix& F,
                               Epetra_SerialDenseMatrix& I,
-                              Epetra_SerialDenseMatrix& J  //dynamicContribution
+                              Epetra_SerialDenseMatrix& J,  //dynamicContribution
+                              Epetra_SerialDenseMatrix& I2  //dynamicContribution
 )
 {
   pInst->updateIntermediateVarsMy(Vd, Vg, Vs, Ve, Vdi, Vsi);
@@ -499,12 +500,20 @@ void updateIntermediateVarsMy(Xyce::Device::ADMSbsimcmg::Instance* pInst,
   J(admsNodeID_e,0) =  pInst->dynamicContributions[admsNodeID_e].val();
   J(admsNodeID_di,0) = pInst->dynamicContributions[admsNodeID_di].val();
   J(admsNodeID_si,0) = pInst->dynamicContributions[admsNodeID_si].val();
+
+  I2(admsNodeID_d,0) =  pInst->dynamicContributions[admsNodeID_d].val();
+  I2(admsNodeID_g,0) =  pInst->dynamicContributions[admsNodeID_g].val();
+  I2(admsNodeID_s,0) =  pInst->dynamicContributions[admsNodeID_s].val();
+  I2(admsNodeID_e,0) =  pInst->dynamicContributions[admsNodeID_e].val();
+  I2(admsNodeID_di,0) = pInst->dynamicContributions[admsNodeID_di].val();
+  I2(admsNodeID_si,0) = pInst->dynamicContributions[admsNodeID_si].val();
  
   cout << "M =\n" << M;
   cout << "Q =\n" << Q;
-  cout << "I =\n" << I;
   cout << "F =\n" << F;
+  cout << "I =\n" << I;
   cout << "J =\n" << J;
+  cout << "I2 =\n" << I2;
 }
 
 void GetJacobianMatrix(Xyce::Device::ADMSbsimcmg::Instance* pInst, 
@@ -516,7 +525,8 @@ double* pM,
 double* pQ,
 double* pF,
 double* pI,
-double* pJ
+double* pJ,
+double* pI2
 )
 {
   unsigned int nIter = 100;
@@ -530,6 +540,7 @@ double* pJ
   Epetra_SerialDenseMatrix I_(nNumNode, 1);
   Epetra_SerialDenseMatrix F_(nNumNode, 1);
   Epetra_SerialDenseMatrix J_(nNumNode, 1);
+  Epetra_SerialDenseMatrix I2_(nNumNode, 1);
   Epetra_SerialDenseMatrix Vdisi(pInst->numIntVars, 1);
   Epetra_SerialDenseMatrix Fdisi(pInst->numIntVars, 1);
   Epetra_SerialDenseMatrix B_(pInst->numIntVars, pInst->numIntVars);
@@ -546,13 +557,13 @@ double* pJ
  
     if( i == 0 )
     {
-      updateIntermediateVarsMy(pInst, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, M_, Q_, F_, I_, J_);
+      updateIntermediateVarsMy(pInst, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, M_, Q_, F_, I_, J_, I2_);
       Fdisi(0,0) = -(Vd*M_(4,0)+Vg*M_(4,1)+Vs*M_(4,2)+Ve*M_(4,3));
       Fdisi(1,0) = -(Vd*M_(5,0)+Vg*M_(5,1)+Vs*M_(5,2)+Ve*M_(5,3));
     }
     else
     {
-      updateIntermediateVarsMy(pInst, Vd, Vg, Vs, Ve, Vdi, Vsi, M_, Q_, F_, I_, J_);
+      updateIntermediateVarsMy(pInst, Vd, Vg, Vs, Ve, Vdi, Vsi, M_, Q_, F_, I_, J_, I2_);
       Fdisi(0,0) = -F_(admsNodeID_di,0);
       Fdisi(1,0) = -F_(admsNodeID_si,0);
     }
@@ -592,7 +603,7 @@ double* pJ
     Vdisi(1,0) = invB_(1,0)*Fdisi(0,0) + invB_(1,1)*Fdisi(1,0);
     cout << "Vdisi = " << endl << Vdisi; 
 
-    if( i != 0 && abs(Vdisi(0,0)) < 1e-12 && abs(Vdisi(1,0)) < 1e-12 )
+    if( i != 0 && abs(Vdisi(0,0)) < 1e-16 && abs(Vdisi(1,0)) < 1e-16 )
     {
       cout << "Device convergence!!" << endl;
       cout << "Iter = " << i+1 << endl;
@@ -615,6 +626,7 @@ double* pJ
         pF[m] = -(M_(m,4)*Vdi+M_(m,5)*Vsi);
         pI[m] = I_(m,0);
         pJ[m] = -(Q_(m,4)*Vdi+Q_(m,5)*Vsi);
+        pI2[m] = I2_(m,0);
       }
      break;
     }
@@ -687,7 +699,7 @@ void Initialize()
   cout << "Line:" << __LINE__ << "\n";
 }
 
-void BSIMCMG(char* psInstName, double Vd, double Vg, double Vs, double Ve, double* M, double* Q, double* F, double* I, double* J)
+void BSIMCMG(char* psInstName, double Vd, double Vg, double Vs, double Ve, double* M, double* Q, double* F, double* I, double* J, double* I2)
 {
   //Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>& rConfig = Xyce::Device::Config<Xyce::Device::ADMSbsimcmg::Traits>::addConfiguration()
   //Xyce::Device::ParametricData<void>& inst_parameters = pGlobalConfig->getInstanceParameters();
@@ -730,7 +742,7 @@ void BSIMCMG(char* psInstName, double Vd, double Vg, double Vs, double Ve, doubl
   Xyce::Device::ADMSbsimcmg::Instance* pInst = g_theInstMap[QString(psInstName)];
   if( NULL != pInst )
   {
-    GetJacobianMatrix(pInst, Vd, Vg, Vs, Ve, M, Q, F, I, J);
+    GetJacobianMatrix(pInst, Vd, Vg, Vs, Ve, M, Q, F, I, J, I2);
   }
   else
     cout << "Can not find instance :" << psInstName << "\n";
@@ -751,14 +763,16 @@ int main(int nArgc, char** pArgv) {
   double* F;
   double* I;
   double* J;
+  double* I2;
 
   M = new double[4*4];
   Q = new double[4*4];
   F = new double[4];
   I = new double[4];
   J = new double[4];
+  I2 = new double[4];
   
-  BSIMCMG("M1", Vd, Vg, Vs, Ve, M, Q, F, I, J);
+  BSIMCMG("M1", Vd, Vg, Vs, Ve, M, Q, F, I, J, I2);
  
   return 0;
 }
