@@ -1,7 +1,7 @@
 function X = MOS_DC(Vd,Vg,Vs,Vb)
   Initialize();
   CreateInst('MN', 'nmos1', 'L=3e-8 TFIN=1.5e-8 NFIN=10.0 NRS=1.0 NRD=1.0');
-  CreateInst('MP', 'pmos1', 'L=3e-8 TFIN=1.5e-8 NFIN=10.0 NRS=1.0 NRD=1.0');
+ 
   % cirxuit MNA matrix
   G = [ 0  0  0  0  1  0  0  0; 
         0  0  0  0  0  1  0  0;
