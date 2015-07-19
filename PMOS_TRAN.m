@@ -1,7 +1,9 @@
+% pMOS
 function [Y, time] = PMOS_TRAN(Vdd) 
   Initialize();
   CreateInst('MP', 'pmos1', 'L=3e-8 TFIN=1.5e-8 NFIN=10.0 NRS=1.0 NRD=1.0');
   
+  % circuit MNA matrix
   G = [ 0  0  0  0  1  0  0  0; 
         0  0  0  0  0  1  0  0;
         0  0  0  0  0  0  1  0;
@@ -57,6 +59,7 @@ function [Y, time] = PMOS_TRAN(Vdd)
 
     W = [0; 0; 0; 0; Vdd; -vin(time(i)); 0; Vdd] + fn + jn - jp;
     
+    % solve (G+1/h*C)Xn=1/h*C*Xp+W
     Xn = M\(1/h*C*Xp+W);
   
     Y(1:8,i) = Xn(1:8);
