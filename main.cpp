@@ -529,7 +529,7 @@ double* pJ,
 double* pI2
 )
 {
-  unsigned int nIter = 100;
+  unsigned int nIter = 1000;
   double Vdi = 0.0;
   double Vsi = 0.0;
   int nNumExtNode = pInst->numExtVars;
@@ -603,7 +603,7 @@ double* pI2
     Vdisi(1,0) = invB_(1,0)*Fdisi(0,0) + invB_(1,1)*Fdisi(1,0);
     cout << "Vdisi = " << endl << Vdisi; 
 
-    if( i != 0 && abs(Vdisi(0,0)) < 1e-16 && abs(Vdisi(1,0)) < 1e-16 )
+    if( i != 0 && abs(Vdisi(0,0)) < 1e-12 && abs(Vdisi(1,0)) < 1e-12 )
     {
       cout << "Device convergence!!" << endl;
       cout << "Iter = " << i+1 << endl;
