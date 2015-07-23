@@ -1,4 +1,4 @@
-function X = INV_DC(Vin, Vdd)
+function X = INV_DC(Vin, Vdd, error, alpha)
 
   Initialize();
   CreateInst('MN', 'nmos1', 'L=3e-8 TFIN=1.5e-8 NFIN=10.0 NRS=1.0 NRD=1.0');
@@ -26,8 +26,13 @@ function X = INV_DC(Vin, Vdd)
   %Vdd = 0.1;
   %Vout = 3.73947213e-02;
   
-  Vout = Vin*0.01 + Vdd*0.01;
-  for loop = 1:10000
+  if Vin == 0.0 && Vdd == 0.0
+   X = [0;0;0;0]
+   return
+  end
+  
+  Vout = 10e-8;
+  for loop = 1:20000
     W = [0; 0; 0; Vdd; Vin];
     [PGm, PQm, PF, PI, PJ, PI2] = BSIMCMG('MP',Vdd,Vin,Vout,Vdd);
     [NGm, NQm, NF, NI, NJ, NI2] = BSIMCMG('MN',Vout,Vin,0,0);
@@ -44,14 +49,25 @@ function X = INV_DC(Vin, Vdd)
     %rhs = ([-PF(1) + -PF(4); -PF(2) + -NF(2); -PF(3) + -NF(1); 0; 0] + W + -[ NI(1) + NI(4); PI(2) + NI(2); 0; 0; 0] );
     rhs = ([-PF(1) + -PF(4); -PF(2) + -NF(2); -PF(3) + -NF(1); 0; 0] + W + -[ NI(1) + NI(4); PI(2) + NI(2); 0; 0; 0] );
     f = G*[Vdd; Vin; Vout; PI(3) + NI(1); PI(2) + NI(2) ] - rhs;
-    if abs(f(3)) < 1e-16
+    if abs(f(3)) < error
       loop
       break
     end
     %dVout = -1000000*(f(3))/G(3,3);
-    order = floor(log(abs(f(3)))./log(10)) + 4;
-    dVout = -(1.0/power(10,order)*(f(3)))/G(3,3);
+    %order = floor(log(abs(f(3)))./log(10));
+    dVout = -alpha*100*f(3)/G(3,3);
     Vout = Vout + dVout;
+    
+    if mod(loop,500) == 0
+      alpha = alpha * 10
+    end
+    
+    if Vout > 2.0
+      disp('Diverge');
+      loop
+      break
+    end
+    
   end
   loop
   X = [Vdd; Vin; Vout; 0];
