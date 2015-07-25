@@ -58,7 +58,7 @@ function X = INV_DC(Vin, Vdd, error, alpha)
     dVout = -alpha*100*f(3)/G(3,3);
     Vout = Vout + dVout;
     
-    if mod(loop,500) == 0
+    if mod(loop,200) == 0
       alpha = alpha * 10
     end
     
@@ -70,10 +70,10 @@ function X = INV_DC(Vin, Vdd, error, alpha)
     
   end
   loop
-  X = [Vdd; Vin; Vout; 0];
+  X = [Vdd; Vin; Vout; NI(1) + NI(4); PI(2) + NI(2)];
 end
 
-% fn = -[F(1);F(2);F(3);F(4);0;0;0;0] + [r(1);r(2);r(3);r(4);0;0;0;0];
+% fn = -[F(1);F(2);F(3);F(NI(1) + NI(4); PI(2) + NI(2)4);0;0;0;0] + [r(1);r(2);r(3);r(4);0;0;0;0];
 % jp = -1/h*[J(1);J(2);J(3);J(4);0;0;0;0];
 
 % BE_y1(1) = Xp(1);
