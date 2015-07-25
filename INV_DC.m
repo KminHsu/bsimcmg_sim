@@ -27,10 +27,11 @@ function X = INV_DC(Vin, Vdd, error, alpha)
   %Vout = 3.73947213e-02;
   
   if Vin == 0.0 && Vdd == 0.0
-   X = [0;0;0;0]
+   X = [0;0;0;0;0]
    return
   end
-  
+ 
+  %initial guss 
   Vout = 10e-8;
   for loop = 1:20000
     W = [0; 0; 0; Vdd; Vin];
@@ -38,25 +39,20 @@ function X = INV_DC(Vin, Vdd, error, alpha)
     [PGm, PQm, PF, PI, PJ, PI2] = BSIMCMG('MP',Vdd,Vin,Vout,Vdd);
     [NGm, NQm, NF, NI, NJ, NI2] = BSIMCMG('MN',Vout,Vin,0,0);
     % chart 3-4-1: update the MNA matrix, G.
-    G(1,1) = -PGm(1,1);
+    G(1,1) = -PGm(1,1) + -PGm(4,4);
     G(2,2) = -PGm(2,2) + -NGm(2,2);
     G(3,3) = -PGm(3,3) + -NGm(1,1);
   
     Pr = PI + PF - PGm*[Vdd;Vin;Vout;Vdd];
     Nr = NI + NF - NGm*[Vout;Vin;0;0];
-    %Pr = PI + PGm*[Vdd;Vin;Vout;Vdd];
-    %Nr = NI + NGm*[Vout;Vin;0;0];    
-    
-    %rhs = ([-PF(1) + -PF(4); -PF(2) + -NF(2); -PF(3) + -NF(1); 0; 0] + W + -[ NI(1) + NI(4); PI(2) + NI(2); 0; 0; 0] );
     rhs = ([-PF(1) + -PF(4); -PF(2) + -NF(2); -PF(3) + -NF(1); 0; 0] + W + -[ NI(1) + NI(4); PI(2) + NI(2); 0; 0; 0] );
     f = G*[Vdd; Vin; Vout; PI(3) + NI(1); PI(2) + NI(2) ] - rhs;
     % chart 3-5: ||Xk+1 - Xk|| < error?
+    % f(3)  is Vout
     if abs(f(3)) < error
       loop
       break
     end
-    %dVout = -1000000*(f(3))/G(3,3);
-    %order = floor(log(abs(f(3)))./log(10));
     % chart 3-6: update the damped Newton’s method to solve FX = GX + W.
     dVout = -alpha*100*f(3)/G(3,3);
     % chart 3-7: Xn+1(t)=Xn(t). 
