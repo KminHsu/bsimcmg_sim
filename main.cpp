@@ -507,13 +507,16 @@ void updateIntermediateVarsMy(Xyce::Device::ADMSbsimcmg::Instance* pInst,
   I2(admsNodeID_e,0) =  pInst->dynamicContributions[admsNodeID_e].val();
   I2(admsNodeID_di,0) = pInst->dynamicContributions[admsNodeID_di].val();
   I2(admsNodeID_si,0) = pInst->dynamicContributions[admsNodeID_si].val();
- 
-  cout << "M =\n" << M;
-  cout << "Q =\n" << Q;
-  cout << "F =\n" << F;
-  cout << "I =\n" << I;
-  cout << "J =\n" << J;
-  cout << "I2 =\n" << I2;
+
+  if( getenv("DebugMode") != NULL )
+  { 
+    cout << "M =\n" << M;
+    cout << "Q =\n" << Q;
+    cout << "F =\n" << F;
+    cout << "I =\n" << I;
+    cout << "J =\n" << J;
+    cout << "I2 =\n" << I2;
+  }
 }
 
 void GetJacobianMatrix(Xyce::Device::ADMSbsimcmg::Instance* pInst, 
@@ -530,8 +533,8 @@ double* pI2
 )
 {
   unsigned int nIter = 1000;
-  double Vdi = 0.0;
-  double Vsi = 0.0;
+  double Vdi = 0;
+  double Vsi = 0;
   int nNumExtNode = pInst->numExtVars;
   int nNumIntNode = pInst->numExtVars;
   int nNumNode = pInst->numIntVars + pInst->numExtVars;
@@ -567,21 +570,23 @@ double* pI2
       Fdisi(0,0) = -F_(admsNodeID_di,0);
       Fdisi(1,0) = -F_(admsNodeID_si,0);
     }
-    cout << "M_ = " << endl << M_; 
-    cout << "Q_ = " << endl << Q_; 
-    cout << "F_ = " << endl << F_; 
-    cout << "I_ = " << endl << I_; 
-    cout << "J_ = " << endl << J_; 
+    if( getenv("DebugMode") != NULL ) {
+      cout << "M_ = " << endl << M_; 
+      cout << "Q_ = " << endl << Q_; 
+      cout << "F_ = " << endl << F_; 
+      cout << "I_ = " << endl << I_; 
+      cout << "J_ = " << endl << J_; 
+    }
 
     B_(0,0) = M_(admsNodeID_di,admsNodeID_di); 
     B_(0,1) = M_(admsNodeID_di,admsNodeID_si);
     B_(1,0) = M_(admsNodeID_si,admsNodeID_di);
     B_(1,1) = M_(admsNodeID_si,admsNodeID_si);
     invB_ = B_;
-    cout << "B_ = " << endl << B_; 
+    if( getenv("DebugMode") != NULL ) {
+      cout << "B_ = " << endl << B_;
+    }
 
-    cout << "line = " << __LINE__ << endl;
-    
     //Crash in Matlab
     //solver.SetMatrix(invB_);
     //solver.Invert();
@@ -592,21 +597,23 @@ double* pI2
     invB_(1,1) =  B_(0,0);
     invB_.Scale( 1.0/(B_(0,0)*B_(1,1) - B_(1,0)*B_(0,1)) ); 
 
-    cout << "line = " << __LINE__ << endl;
-    cout << "invB_ = " << endl << invB_; 
-    cout << "Fdisi = " << endl << Fdisi; 
-
-    cout << "line = " << __LINE__ << endl;
+    if( getenv("DebugMode") != NULL ) {
+     cout << "line = " << __LINE__ << endl;
+     cout << "invB_ = " << endl << invB_; 
+     cout << "Fdisi = " << endl << Fdisi; 
+     cout << "line = " << __LINE__ << endl;
+    }
     //Not work in Matlab
     //Vdisi.Multiply('N', 'N', 1.0, invB_, Fdisi, 0.0); 
     Vdisi(0,0) = invB_(0,0)*Fdisi(0,0) + invB_(0,1)*Fdisi(1,0);
     Vdisi(1,0) = invB_(1,0)*Fdisi(0,0) + invB_(1,1)*Fdisi(1,0);
-    cout << "Vdisi = " << endl << Vdisi; 
+    if( getenv("DebugMode") != NULL ) {
+     cout << "Vdisi = " << endl << Vdisi; 
+    }
 
     if( i != 0 && abs(Vdisi(0,0)) < 1e-12 && abs(Vdisi(1,0)) < 1e-12 )
     {
-      cout << "Device convergence!!" << endl;
-      cout << "Iter = " << i+1 << endl;
+      cout << "Device convergence!! " << "Iter = " << i+1 << endl;
       for(int m = 0; m < nNumExtNode; m++)
       {
         //pF[m] = F_(m,0);

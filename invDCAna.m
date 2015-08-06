@@ -5,13 +5,13 @@ MVout = zeros(length(Vin), length(Vdd));
 
 outfile = fopen('INV_DC.log', 'w')
 error = 1e-18;
-alpha = 1;
+alpha = 1e4;
 for i = 1:length(Vdd)
   for j = 1:length(Vin)
     outfile = fopen('INV_DC.log', 'a');
-    X = INV_DC(Vin(j),Vdd(i),error,alpha);
+    [X loop isDiverge] = INV_DC(Vin(j),Vdd(i),error,alpha);
     MVout(i,j) = X(3);
-    fprintf(outfile, ['%g %g %g', '\n'], Vin(j), Vdd(i), X(3));
+    fprintf(outfile, ['%g %g %g %g %g', '\n'], Vin(j), Vdd(i), X(3), loop, isDiverge);
     fclose(outfile);
   end
 end
