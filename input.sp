@@ -1,8 +1,8 @@
 ** RC Network, high pass
 ** tran(1.0, 1e-18, 1, 10, 50, 'rc_h.csv')
 Vvin Vin 0 0.3
-C1 Vin n1 160e-12
-R1 n1 0 100
+C1 Vin n1 1.6e-8
+R1 n1 0 1000
 
 ** RC Network, low pass
 ** tran(1.0, 1e-18, 1, 10, 50, 'rc_l.csv')
