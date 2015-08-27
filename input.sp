@@ -1,18 +1,17 @@
 ** RC Network, high pass
 ** tran(1.0, 1e-18, 1, 10, 50, 'rc_h.csv')
-*Vvin Vin 0 0.3
-*C1 Vin n1 100e-12
-*R1 n1 0 1000
+Vvin Vin 0 0.3
+C1 Vin n1 5e-9
+R1 n1 0 100
 
 ** RC Network, low pass
 ** tran(1.0, 1e-18, 1, 10, 50, 'rc_l.csv')
-Vvin Vin 0 0.3
-R1 Vin n1 1000
-C1 n1 0 100e-12
-
+*Vvin Vin 0 0.3
+*R1 Vin n1 1000
+*C1 n1 0 100e-12
 
 ** 1 inverter
-** tran(1.0, 1e-12, 1e6, 10, 40, 'inv2.csv')
+** tran(1.0, 1e-12, 1e6, 10, 40, 'inv.csv')
 *Vvdd Vdd 0 1.0
 *Vvin Vin 0 0.3
 *MP1 Vdd Vin Vout1 Vdd pmos1 L=3e-8 TFIN=1.5e-8 NFIN=10.0 NRS=1.0 NRD=1.0
