@@ -4,14 +4,19 @@ Vin = 0:0.1:1.0;
 MVout = zeros(length(Vin), length(Vdd));
 
 outfile = fopen('INV_DC.log', 'w')
-error = 1e-18;
-alpha = 1e4;
+fclose(outfile);
+error = 1e-12;
+alpha = 1e6;
+reset = 10;
+nextOrderCnt = 60;
 for i = 1:length(Vdd)
   for j = 1:length(Vin)
     outfile = fopen('INV_DC.log', 'a');
-    [X loop isDiverge] = INV_DC(Vin(j),Vdd(i),error,alpha);
+    %[G C X W rhs loop isDiverge] = INV_DC_2(Vin(j),Vdd(i),error,alpha);
+    [G C X W rhs rhsF rhsJ loop isDiverge errors] = dc(Vin(j), Vdd(i), error, alpha, reset, nextOrderCnt)
     MVout(i,j) = X(3);
     fprintf(outfile, ['%g %g %g %g %g', '\n'], Vin(j), Vdd(i), X(3), loop, isDiverge);
+    fprintf(outfile, ['errors->' repmat('%20g,',1,length(errors)) '\n'], errors);
     fclose(outfile);
   end
 end

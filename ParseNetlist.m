@@ -19,7 +19,6 @@ function [inputMap termMap instTermMap resValueMap capValueMap sizeG] = ParseNet
       term1 = tokens(2);
       term2 = tokens(3);
       value = tokens(4);
-
       instName = instName{1};
       term1 = term1{1};
       term2 = term2{1};
@@ -32,11 +31,14 @@ function [inputMap termMap instTermMap resValueMap capValueMap sizeG] = ParseNet
       end
       terms = {term1;term2};
       instTermMap(instName) = terms;
-      resValueMap(instName) = value;
+      resValueMap(instName) = 1.0/value;
     elseif line(1) == 'C'
-      term1 = tokens(1);
-      term2 = tokens(2);
-      value = tokens(3);
+      tokens = strsplit(line, ' ');
+      instName = tokens(1);
+      term1 = tokens(2);
+      term2 = tokens(3);
+      value = tokens(4);
+      instName = instName{1};
       term1 = term1{1};
       term2 = term2{1};
       value = str2num(value{1});
@@ -62,7 +64,8 @@ function [inputMap termMap instTermMap resValueMap capValueMap sizeG] = ParseNet
       cell = tokens(4);
       inputVoltage = cell{1};
 
-      inputMap(inputName1) = str2num(inputVoltage);
+      %inputMap(inputName1) = str2num(inputVoltage);
+      inputMap(inputName1) = length(inputMap) + 1; 
       if strcmp(inputName2,'0') == 0 && isKey(termMap, inputName2) == 0
         termMap(inputName2) = length(termMap) + 1;
       end

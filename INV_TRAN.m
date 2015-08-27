@@ -57,9 +57,10 @@ function Y = INV_TRAN(Vdd, error, alpha)
     M = ( G + 1/h * C );
     Pr = PI + PF - PGm*[Vdd;vin(time(i));Vout;Vdd];
     Nr = NI + NF - NGm*[Vout;vin(time(i));0;0];
-    %r = I + F - Gm*[Vdd;vin(time(i));0;0];
     r = [Pr(1) + Pr(4); Pr(2) + Nr(2); Pr(3) + Nr(1); 0; 0];
-    fn = [-PF(1) + -PF(4); -PF(2) + -NF(2); -PF(3) + -NF(1); 0; 0] + [r(1);r(2);r(3);0;0];
+    
+    %fn = [-PF(1) + -PF(4); -PF(2) + -NF(2); -PF(3) + -NF(1); 0; 0] + [r(1);r(2);r(3);0;0];
+    fn = [-PF(1) + -PF(4); -PF(2) + -NF(2); -PF(3) + -NF(1); 0; 0];
     jn = -1/h*[PJ(1) + PJ(4); PJ(2) + NJ(2); PJ(3) + NJ(1);0;0];
 
     % Update W

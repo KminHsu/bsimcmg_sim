@@ -9,28 +9,35 @@
 %   end
 % end
 
-% function y = vin(t)
-%   h = 1e-8;
-%   if t == 0.0
-%     y = 0.0;
-%   elseif t >= h && t <= 1e-7+h
-%     x1 = h;
-%     x2 = 1e-7+h;
-%     y1 = 0.0;
-%     y2 = 1.0;
-%     y = (t-x1) * (y2-y1)/(x2-x1) + y1;
-%   elseif t >= 1e-7+h && t <= 5e-7+h
-%     y = 1.0;
-%   elseif t >= 5e-7+h && t <= 6e-7+h
-%     x1 = 5e-7+h;
-%     x2 = 6e-7+h;
-%     y1 = 1.0;
-%     y2 = 0.0;
-%     y = (t-x1) * (y2-y1)/(x2-x1) + y1;
-%   else
-%     y = 0.0;
-%   end
-% end
+%%sin
+
+%function y = vin(t)
+%  y = 1e-3*sin(2*pi*t/1e-6) 
+%  y = y + 1e-3
+%end
+
+%function y = vin(t)
+%  h = 1e-8;
+%  if t == 0.0
+%    y = 0.0;
+%  elseif t >= h && t <= 1e-7+h
+%    x1 = h;
+%    x2 = 1e-7+h;
+%    y1 = 0.0;
+%    y2 = 1.0;
+%    y = (t-x1) * (y2-y1)/(x2-x1) + y1;
+%  elseif t >= 1e-7+h && t <= 5e-7+h
+%    y = 1.0;
+%  elseif t >= 5e-7+h && t <= 6e-7+h
+%    x1 = 5e-7+h;
+%    x2 = 6e-7+h;
+%    y1 = 1.0;
+%    y2 = 0.0;
+%    y = (t-x1) * (y2-y1)/(x2-x1) + y1;
+%  else
+%    y = 0.0;
+%  end
+%end
 
 function y = vin(t)
   h = 1e-8;
@@ -68,4 +75,8 @@ function y = vin(t)
     y = 0.0;
   end
 end
+
+
+
+
 
